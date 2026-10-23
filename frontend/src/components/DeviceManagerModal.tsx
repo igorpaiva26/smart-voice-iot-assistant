@@ -194,8 +194,8 @@ export function DeviceManagerModal({ isOpen, onClose }: Props) {
               <div className="form-group">
                 <label>Canal / Chave:</label>
                 <select value={channel} onChange={(e) => setChannel(e.target.value)}>
-                  <option value="switch_1">Canal 1 (switch_1 - Tomada Principal)</option>
-                  <option value="switch_2">Canal 2 (switch_2 - Luz / Interruptor)</option>
+                  <option value="switch_1">Canal 1 (switch_1 - Tomada)</option>
+                  <option value="switch_2">Canal 2 (switch_2 - Luz)</option>
                   <option value="switch_3">Canal 3 (switch_3)</option>
                 </select>
               </div>

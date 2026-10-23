@@ -11,19 +11,42 @@
   justify-content: center;
   z-index: 1000;
   animation: fadeIn 0.2s ease-out;
+  padding: 1rem;
+  box-sizing: border-box;
 }
 
 .modal-content {
   background: #0d1520;
   border: 1px solid rgba(56, 189, 248, 0.25);
   border-radius: 14px;
-  width: 90%;
-  max-width: 440px;
-  max-height: 88vh;
+  width: 100%;
+  max-width: 480px;
+  max-height: 90vh;
   overflow-y: auto;
-  padding: 1.5rem;
+  overflow-x: hidden; /* Elimina barra de rolagem horizontal */
+  padding: 1.25rem;
   box-shadow: 0 10px 40px rgba(0, 0, 0, 0.6);
   color: #fff;
+  box-sizing: border-box;
+}
+
+/* Scrollbar dark fina e elegante */
+.modal-content::-webkit-scrollbar {
+  width: 6px;
+}
+
+.modal-content::-webkit-scrollbar-track {
+  background: rgba(0, 0, 0, 0.25);
+  border-radius: 4px;
+}
+
+.modal-content::-webkit-scrollbar-thumb {
+  background: rgba(56, 189, 248, 0.35);
+  border-radius: 4px;
+}
+
+.modal-content::-webkit-scrollbar-thumb:hover {
+  background: rgba(56, 189, 248, 0.65);
 }
 
 .modal-header {
@@ -31,15 +54,18 @@
   justify-content: space-between;
   align-items: center;
   border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-  padding-bottom: 0.8rem;
+  padding-bottom: 0.75rem;
   margin-bottom: 1rem;
 }
 
 .modal-header h2 {
-  font-size: 1.15rem;
+  font-size: 1.1rem;
   font-weight: 600;
   color: #38bdf8;
   margin: 0;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
 }
 
 .close-btn {
@@ -49,27 +75,31 @@
   font-size: 1.5rem;
   cursor: pointer;
   line-height: 1;
+  padding: 0.2rem 0.4rem;
+  border-radius: 4px;
 }
 
 .close-btn:hover {
   color: #fff;
+  background: rgba(255, 255, 255, 0.1);
 }
 
 .modal-actions-bar {
   display: flex;
   gap: 0.5rem;
-  margin-bottom: 1.2rem;
+  margin-bottom: 1rem;
 }
 
 .action-btn {
   flex: 1;
-  padding: 0.6rem;
+  padding: 0.6rem 0.5rem;
   border-radius: 8px;
-  font-size: 0.85rem;
+  font-size: 0.82rem;
   font-weight: 500;
   cursor: pointer;
   transition: all 0.2s;
   border: none;
+  text-align: center;
 }
 
 .action-btn.primary {
@@ -81,12 +111,12 @@
 }
 
 .action-btn.secondary {
-  background: rgba(255, 255, 255, 0.08);
+  background: rgba(255, 255, 255, 0.07);
   color: #cbd5e1;
   border: 1px solid rgba(255, 255, 255, 0.15);
 }
 .action-btn.secondary:hover {
-  background: rgba(255, 255, 255, 0.15);
+  background: rgba(255, 255, 255, 0.14);
 }
 
 .status-toast {
@@ -106,6 +136,7 @@
   border-radius: 10px;
   padding: 1rem;
   margin-bottom: 1.2rem;
+  box-sizing: border-box;
 }
 
 .device-form h3 {
@@ -120,6 +151,9 @@
   flex-direction: column;
   gap: 0.35rem;
   margin-bottom: 0.8rem;
+  min-width: 0;
+  width: 100%;
+  box-sizing: border-box;
 }
 
 .form-group label {
@@ -134,8 +168,11 @@
   border: 1px solid rgba(255, 255, 255, 0.15);
   border-radius: 6px;
   color: #fff;
-  padding: 0.5rem;
+  padding: 0.5rem 0.6rem;
   font-size: 0.85rem;
+  width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
 }
 
 .form-group input:focus,
@@ -146,11 +183,14 @@
 
 .form-row {
   display: flex;
-  gap: 0.5rem;
+  gap: 0.6rem;
+  width: 100%;
+  box-sizing: border-box;
 }
 
 .form-row .form-group {
   flex: 1;
+  min-width: 0;
 }
 
 .submit-btn {
@@ -162,7 +202,8 @@
   border-radius: 8px;
   font-weight: 600;
   cursor: pointer;
-  margin-top: 0.5rem;
+  margin-top: 0.4rem;
+  transition: background 0.2s;
 }
 .submit-btn:hover {
   background: #047857;
@@ -175,10 +216,11 @@
   border-radius: 8px;
   padding: 0.8rem;
   margin-bottom: 1.2rem;
+  box-sizing: border-box;
 }
 
 .discovered-box h4 {
-  font-size: 0.85rem;
+  font-size: 0.82rem;
   margin: 0 0 0.5rem 0;
   color: #38bdf8;
 }
@@ -190,12 +232,14 @@
   padding: 0.4rem 0;
   border-bottom: 1px solid rgba(255, 255, 255, 0.05);
   font-size: 0.8rem;
+  gap: 0.5rem;
 }
 
 .dev-id {
   display: block;
   font-size: 0.7rem;
   color: #64748b;
+  word-break: break-all;
 }
 
 .quick-import-btn {
@@ -203,14 +247,18 @@
   color: #fff;
   border: none;
   border-radius: 4px;
-  padding: 0.3rem 0.5rem;
+  padding: 0.35rem 0.6rem;
   font-size: 0.75rem;
   cursor: pointer;
+  white-space: nowrap;
+}
+.quick-import-btn:hover {
+  background: #0369a1;
 }
 
 /* CARDS DE DISPOSITIVOS */
 .devices-list h3 {
-  font-size: 0.9rem;
+  font-size: 0.85rem;
   color: #94a3b8;
   margin-bottom: 0.6rem;
   text-transform: uppercase;
@@ -224,9 +272,11 @@
   background: rgba(255, 255, 255, 0.04);
   border: 1px solid rgba(255, 255, 255, 0.08);
   border-radius: 10px;
-  padding: 0.75rem 0.9rem;
+  padding: 0.7rem 0.85rem;
   margin-bottom: 0.5rem;
   transition: all 0.2s;
+  box-sizing: border-box;
+  gap: 0.5rem;
 }
 
 .device-card.is-on {
@@ -237,28 +287,35 @@
 .card-info {
   display: flex;
   align-items: center;
-  gap: 0.8rem;
+  gap: 0.75rem;
+  min-width: 0;
 }
 
 .card-icon {
-  font-size: 1.3rem;
+  font-size: 1.25rem;
+  flex-shrink: 0;
 }
 
 .card-info h4 {
   margin: 0;
-  font-size: 0.95rem;
+  font-size: 0.9rem;
   font-weight: 500;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .card-meta {
-  font-size: 0.75rem;
+  font-size: 0.72rem;
   color: #64748b;
+  display: block;
 }
 
 .card-actions {
   display: flex;
   align-items: center;
-  gap: 0.5rem;
+  gap: 0.4rem;
+  flex-shrink: 0;
 }
 
 .toggle-test-btn {
@@ -266,11 +323,12 @@
   border: none;
   border-radius: 6px;
   color: #94a3b8;
-  padding: 0.4rem 0.7rem;
-  font-size: 0.8rem;
+  padding: 0.35rem 0.65rem;
+  font-size: 0.78rem;
   font-weight: 500;
   cursor: pointer;
   transition: all 0.2s;
+  white-space: nowrap;
 }
 
 .toggle-test-btn.active {
@@ -285,9 +343,11 @@
   cursor: pointer;
   font-size: 0.95rem;
   padding: 0.3rem;
+  border-radius: 4px;
 }
 .delete-btn:hover {
   color: #ef4444;
+  background: rgba(239, 68, 68, 0.1);
 }
 
 .empty-text {
@@ -295,4 +355,9 @@
   color: #64748b;
   text-align: center;
   padding: 1rem;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: scale(0.98); }
+  to { opacity: 1; transform: scale(1); }
 }
