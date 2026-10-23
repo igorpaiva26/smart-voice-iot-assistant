@@ -62,12 +62,12 @@ export class TuyaService {
     return this.request('GET', `/v1.0/end-user/devices/${deviceId}/detail`);
   }
 
-  async setDeviceSwitch(deviceId: string, on: boolean): Promise<boolean> {
-    console.log(`[tuya] Enviando comando REAL: device=${deviceId} switch_1=${on}`);
+  async setDeviceSwitch(deviceId: string, on: boolean, channel: string = 'switch_1'): Promise<boolean> {
+    console.log(`[tuya] Enviando comando REAL: device=${deviceId} canal=${channel} valor=${on}`);
     await this.request(
       'POST',
       `/v1.0/end-user/devices/${deviceId}/shadow/properties/issue`,
-      { properties: JSON.stringify({ switch_1: on }) }
+      { properties: JSON.stringify({ [channel]: on }) }
     );
     return true;
   }

@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState, useCallback } from 'react';
 import { OrbVisualizer, OrbState } from './components/OrbVisualizer';
+import { DeviceManagerModal } from './components/DeviceManagerModal';
 import './index.css';
 
 const API_BASE = 'http://localhost:3001/api';
@@ -9,6 +10,7 @@ export default function App() {
   const [subtitle, setSubtitle] = useState<string>('');
   const [errorMessage, setErrorMessage] = useState<string>('');
   const [audioLevel, setAudioLevel] = useState<number>(0);
+  const [isManagerOpen, setIsManagerOpen] = useState<boolean>(false);
 
   const stateRef = useRef<OrbState>('ready');
   const recognitionRef = useRef<any>(null);
@@ -66,7 +68,6 @@ export default function App() {
           audio.play().catch(finish);
         })
         .catch(() => {
-          // Fallback se ElevenLabs falhar
           const utter = new SpeechSynthesisUtterance(text);
           utter.lang = 'pt-BR';
           utter.onend = finish;
@@ -99,7 +100,6 @@ export default function App() {
         if (data.isCommand && data.response) {
           await playSpeech(data.response);
         } else {
-          // Ignora frases não relacionadas à casa inteligente
           setTimeout(() => {
             setSubtitle('');
             isProcessingRef.current = false;
@@ -115,7 +115,7 @@ export default function App() {
     [playSpeech, updateState]
   );
 
-  // ─── TRANSCRIÇÃO VIA GROQ WHISPER (FALLBACK ROBUSTO) ──────────────────────
+  // ─── TRANSCRIÇÃO VIA GROQ WHISPER ────────────────────────────────────────
   const sendAudioToGroqWhisper = useCallback(async (blob: Blob) => {
     if (blob.size < 3000 || isProcessingRef.current) return;
 
@@ -143,7 +143,6 @@ export default function App() {
   const initMicrophone = useCallback(async () => {
     setErrorMessage('');
     try {
-      // 1. Solicita acesso ao microfone nativamente
       const stream = await navigator.mediaDevices.getUserMedia({
         audio: {
           echoCancellation: true,
@@ -153,7 +152,6 @@ export default function App() {
       });
       mediaStreamRef.current = stream;
 
-      // 2. AudioContext para visualizador em tempo real
       const AudioCtx = window.AudioContext || (window as any).webkitAudioContext;
       const audioCtx = new AudioCtx();
       audioContextRef.current = audioCtx;
@@ -167,7 +165,6 @@ export default function App() {
       source.connect(analyser);
       analyserRef.current = analyser;
 
-      // 3. MediaRecorder para fallback contínuo
       const recorder = new MediaRecorder(stream, { mimeType: 'audio/webm' });
       mediaRecorderRef.current = recorder;
 
@@ -184,7 +181,6 @@ export default function App() {
         hasVoiceRef.current = false;
       };
 
-      // 4. Web Speech API (reconhecimento rápido do navegador)
       const SpeechRec = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
       if (SpeechRec) {
         const recognition = new SpeechRec();
@@ -225,7 +221,7 @@ export default function App() {
 
       updateState('listening');
 
-      // 5. Loop de medição de volume (VAD + Animação do Orbe)
+      // VAD e Medição de Volume
       const buffer = new Uint8Array(analyser.frequencyBinCount);
       const updateVolumeLoop = () => {
         if (!analyserRef.current) return;
@@ -239,7 +235,6 @@ export default function App() {
         const normalized = Math.min(avg / 90, 1);
         setAudioLevel(normalized);
 
-        // Se detectar som perceptível (> 0.12)
         if (normalized > 0.12 && !isSpeakingRef.current && !isProcessingRef.current) {
           isSpeakingRef.current = true;
           hasVoiceRef.current = true;
@@ -249,7 +244,6 @@ export default function App() {
           }
         }
 
-        // Detecção de silêncio
         if (normalized <= 0.08 && isSpeakingRef.current) {
           if (!silenceTimerRef.current) {
             silenceTimerRef.current = setTimeout(() => {
@@ -280,7 +274,7 @@ export default function App() {
     }
   }, [handleCommandText, sendAudioToGroqWhisper, updateState]);
 
-  // Auto-inicia microfone no carregamento (no Electron a permissão é concedida automaticamente)
+  // Auto-início
   useEffect(() => {
     const t = setTimeout(() => {
       initMicrophone().catch(() => {});
@@ -300,6 +294,14 @@ export default function App() {
 
   return (
     <div className="app-container">
+      <button
+        className="settings-trigger-btn"
+        title="Gerenciar Dispositivos Inteligentes"
+        onClick={() => setIsManagerOpen(true)}
+      >
+        ⚙️
+      </button>
+
       <OrbVisualizer
         state={appState}
         subtitle={subtitle}
@@ -310,6 +312,11 @@ export default function App() {
             initMicrophone();
           }
         }}
+      />
+
+      <DeviceManagerModal
+        isOpen={isManagerOpen}
+        onClose={() => setIsManagerOpen(false)}
       />
     </div>
   );
