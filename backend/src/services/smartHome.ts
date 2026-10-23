@@ -1,6 +1,7 @@
 import fetch from 'node-fetch';
 import { loadEnv } from '../types/env';
 import { tuya } from './tuya';
+import { windowsControl } from './windowsControl';
 
 const env = loadEnv();
 
@@ -19,30 +20,34 @@ const MOCK_DEVICES: Record<string, { name: string; state: { on: boolean; tempera
   'tomada_quarto': { name: 'tomada do quarto', state: { on: false } },
 };
 
-const SYSTEM_PROMPT = `Você é um assistente de casa inteligente estilo Alexa chamado Aline.
-Dispositivos disponíveis:
-- ar_condicionado (Dispositivo REAL: Smart Plug da tomada do Ar Condicionado no Smart Life)
+const SYSTEM_PROMPT = `Você é um assistente pessoal estilo Alexa chamado Aline.
+Dispositivos e Comandos disponíveis:
+- ar_condicionado (Smart Plug da tomada do Ar Condicionado no Smart Life)
 - ventilador
-- luz_sala
-- luz_quarto
-- luz_cozinha
-- tomada_sala
-- tomada_quarto
+- luz_sala, luz_quarto, luz_cozinha
+- tomada_sala, tomada_quarto
+- lock_screen (Bloquear a tela do Windows / Win + L)
+- close_app (Fechar aplicativo/navegador de forma segura, ex: Brave, Chrome, etc.)
 
 Analise o que o usuário falou. Responda APENAS em JSON no formato:
 {
   "isCommand": true ou false,
-  "device": "nome_do_dispositivo" ou null,
-  "action": "on" ou "off" ou "set_temperature" ou "set_speed" ou null,
-  "value": numero ou null
+  "device": "nome_do_dispositivo_ou_comando" ou null,
+  "action": "on" ou "off" ou "lock" ou "close" ou "set_temperature" ou null,
+  "value": string ou numero ou null
 }
 
 Regras:
-1. Se for pedido para ligar, acender ou ativar: action="on"
-2. Se for pedido para desligar, apagar ou desativar: action="off"
-3. Se falar de "ar condicionado", "ar", "tomada do ar": escolha "ar_condicionado".
-4. Se o dispositivo for o quarto: escolha "luz_quarto" ou "tomada_quarto".
-5. Se NÃO for um comando de casa inteligente: responda "isCommand": false.`;
+1. Se for pedido para bloquear a tela, bloquear o computador, trancar o pc:
+   device="lock_screen", action="lock", value=null
+2. Se for pedido para fechar um aplicativo ou navegador (ex: "fechar o navegador brave", "fecha o brave", "fecha o chrome", "fecha o spotify"):
+   device="close_app", action="close", value="nome_do_app" (ex: "brave", "chrome", "spotify")
+3. Casa inteligente:
+   - ar condicionado: device="ar_condicionado", action="on"|"off"
+   - tomada: device="tomada_sala"|"tomada_quarto"
+   - luz: device="luz_sala"|"luz_quarto"|"luz_cozinha"
+4. Se NÃO for um comando (conversa, perguntas genéricas sem ação):
+   isCommand=false`;
 
 async function classifyWithGroq(text: string): Promise<any> {
   if (!env.GROQ_API_KEY) {
@@ -63,7 +68,7 @@ async function classifyWithGroq(text: string): Promise<any> {
           { role: 'user', content: text },
         ],
         temperature: 0,
-        max_tokens: 150,
+        max_tokens: 120,
         response_format: { type: 'json_object' },
       }),
     });
@@ -86,6 +91,19 @@ async function classifyWithGroq(text: string): Promise<any> {
 
 function fallbackClassify(text: string): any {
   const lower = text.toLowerCase();
+
+  // Bloquear tela
+  if (/\b(bloqueia|bloquear|bloqueie|tranca|trancar)\b/i.test(lower) && /\b(tela|windows|computador|pc)\b/i.test(lower)) {
+    return { isCommand: true, device: 'lock_screen', action: 'lock', value: null };
+  }
+
+  // Fechar aplicativo
+  if (/\b(fecha|fechar|feche|encerra|encerrar)\b/i.test(lower)) {
+    if (lower.includes('brave')) return { isCommand: true, device: 'close_app', action: 'close', value: 'brave' };
+    if (lower.includes('chrome')) return { isCommand: true, device: 'close_app', action: 'close', value: 'chrome' };
+    if (lower.includes('spotify')) return { isCommand: true, device: 'close_app', action: 'close', value: 'spotify' };
+  }
+
   const isOff = /\b(desliga|desligar|apaga|apagar|desative|desativar)\b/i.test(lower);
   const isOn = /\b(liga|ligar|acende|acender|ative|ativar)\b/i.test(lower);
 
@@ -111,8 +129,19 @@ function fallbackClassify(text: string): any {
   return { isCommand: true, device, action, value: null };
 }
 
-async function executeAction(device: string, action: string, value?: number | null): Promise<string> {
-  // ─── 1. DISPOSITIVO REAL TUYA / SMART LIFE (Tomada do Ar Condicionado) ────
+async function executeAction(device: string, action: string, value?: any): Promise<string> {
+  // ─── 1. BLOQUEAR TELA DO WINDOWS ──────────────────────────────────────────
+  if (device === 'lock_screen') {
+    return windowsControl.lockScreen();
+  }
+
+  // ─── 2. FECHAR APLICATIVO DE FORMA SEGURA (WM_CLOSE / X) ─────────────────
+  if (device === 'close_app') {
+    const appName = typeof value === 'string' ? value : 'brave';
+    return windowsControl.closeAppGracefully(appName);
+  }
+
+  // ─── 3. DISPOSITIVO REAL TUYA / SMART LIFE (Tomada do Ar Condicionado) ────
   if (device === 'ar_condicionado') {
     const targetState = action === 'on';
     const deviceId = env.TUYA_DEFAULT_DEVICE_ID;
@@ -129,7 +158,7 @@ async function executeAction(device: string, action: string, value?: number | nu
     }
   }
 
-  // ─── 2. DISPOSITIVOS MOCKADOS / OUTROS ─────────────────────────────────────
+  // ─── 4. DISPOSITIVOS MOCKADOS / OUTROS ─────────────────────────────────────
   const dev = MOCK_DEVICES[device];
   const name = dev?.name ?? device;
   const isFem = name.startsWith('luz') || name.startsWith('tomada');
