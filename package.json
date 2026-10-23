@@ -1,0 +1,12 @@
+{
+  "name": "aline-smart-voice-assistant",
+  "version": "1.0.0",
+  "description": "Assistente de voz inteligente estilo Alexa para Windows integrada com Smart Life / Tuya",
+  "main": "electron/main.js",
+  "scripts": {
+    "start": "electron ."
+  },
+  "devDependencies": {
+    "electron": "^33.2.1"
+  }
+}
