@@ -69,6 +69,17 @@ function createMainWindow() {
     },
   });
 
+  // ⚠️ AUTO-AUTORIZAÇÃO DE MICROFONE NO ELECTRON (Essencial para não bloquear o mic)
+  const session = mainWindow.webContents.session;
+  session.setPermissionCheckHandler((webContents, permission) => {
+    if (permission === 'media') return true;
+    return false;
+  });
+  session.setPermissionRequestHandler((webContents, permission, callback) => {
+    if (permission === 'media') return callback(true);
+    callback(false);
+  });
+
   checkBackendReady(() => {
     const distIndex = path.join(__dirname, '..', 'frontend', 'dist', 'index.html');
     mainWindow.loadFile(distIndex).catch(() => {

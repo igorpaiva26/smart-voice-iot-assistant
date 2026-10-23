@@ -280,6 +280,14 @@ export default function App() {
     }
   }, [handleCommandText, sendAudioToGroqWhisper, updateState]);
 
+  // Auto-inicia microfone no carregamento (no Electron a permissão é concedida automaticamente)
+  useEffect(() => {
+    const t = setTimeout(() => {
+      initMicrophone().catch(() => {});
+    }, 400);
+    return () => clearTimeout(t);
+  }, [initMicrophone]);
+
   // Limpeza
   useEffect(() => {
     return () => {
