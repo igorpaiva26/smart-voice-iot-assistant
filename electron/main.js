@@ -1,4 +1,4 @@
-const { app, BrowserWindow, Tray, Menu, nativeImage } = require('electron');
+const { app, BrowserWindow, Tray, Menu } = require('electron');
 const path = require('path');
 const { spawn } = require('child_process');
 const http = require('http');
@@ -12,13 +12,9 @@ let tray = null;
 let backendProcess = null;
 let isQuitting = false;
 
-// Ícone ciano em SVG para a bandeja do sistema
-const TRAY_ICON_SVG = Buffer.from(`
-<svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 32 32">
-  <circle cx="16" cy="16" r="13" fill="#0891b2" stroke="#22d3ee" stroke-width="2"/>
-  <circle cx="16" cy="16" r="6" fill="#38bdf8"/>
-</svg>
-`);
+// Caminhos dos ícones
+const TRAY_ICON_PATH = path.join(__dirname, 'tray-icon.png');
+const APP_ICON_PATH = path.join(__dirname, 'icon.ico');
 
 // Verifica se backend está respondendo
 function checkBackendReady(callback, retries = 25) {
@@ -50,7 +46,7 @@ function startBackend() {
       cwd: backendDir,
       shell: true,
       stdio: 'ignore',
-      windowsHide: true, // Garante que NENHUMA janela CMD apareça
+      windowsHide: true,
     });
   }, 1);
 }
@@ -62,13 +58,14 @@ function createMainWindow() {
     minWidth: 380,
     minHeight: 500,
     title: 'Aline - Smart Home Assistant',
+    icon: APP_ICON_PATH,
     backgroundColor: '#050a0f',
     autoHideMenuBar: true,
     show: false,
     webPreferences: {
       nodeIntegration: false,
       contextIsolation: true,
-      backgroundThrottling: false, // Permite escuta em segundo plano
+      backgroundThrottling: false, // Permite escuta contínua em segundo plano
     },
   });
 
@@ -93,14 +90,7 @@ function createMainWindow() {
 }
 
 function createTray() {
-  let icon;
-  try {
-    icon = nativeImage.createFromBuffer(TRAY_ICON_SVG);
-  } catch {
-    icon = nativeImage.createEmpty();
-  }
-
-  tray = new Tray(icon);
+  tray = new Tray(TRAY_ICON_PATH);
   tray.setToolTip('Aline - Smart Home Assistant (Ativa na bandeja)');
 
   const contextMenu = Menu.buildFromTemplate([
