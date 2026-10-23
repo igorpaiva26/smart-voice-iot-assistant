@@ -3,12 +3,16 @@ const path = require('path');
 const { spawn } = require('child_process');
 const http = require('http');
 
+// Silencia logs internos do Chromium
+app.commandLine.appendSwitch('disable-logging');
+app.commandLine.appendSwitch('log-level', '3');
+
 let mainWindow = null;
 let tray = null;
 let backendProcess = null;
 let isQuitting = false;
 
-// Ícone ciano simples em SVG/PNG DataURL para a bandeja do sistema
+// Ícone ciano em SVG para a bandeja do sistema
 const TRAY_ICON_SVG = Buffer.from(`
 <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 32 32">
   <circle cx="16" cy="16" r="13" fill="#0891b2" stroke="#22d3ee" stroke-width="2"/>
@@ -17,12 +21,12 @@ const TRAY_ICON_SVG = Buffer.from(`
 `);
 
 // Verifica se backend está respondendo
-function checkBackendReady(callback, retries = 30) {
+function checkBackendReady(callback, retries = 25) {
   const req = http.get('http://localhost:3001/api/health', (res) => {
     if (res.statusCode === 200) {
       callback(true);
     } else if (retries > 0) {
-      setTimeout(() => checkBackendReady(callback, retries - 1), 600);
+      setTimeout(() => checkBackendReady(callback, retries - 1), 500);
     } else {
       callback(false);
     }
@@ -30,7 +34,7 @@ function checkBackendReady(callback, retries = 30) {
 
   req.on('error', () => {
     if (retries > 0) {
-      setTimeout(() => checkBackendReady(callback, retries - 1), 600);
+      setTimeout(() => checkBackendReady(callback, retries - 1), 500);
     } else {
       callback(false);
     }
@@ -38,19 +42,15 @@ function checkBackendReady(callback, retries = 30) {
 }
 
 function startBackend() {
-  // Verifica primeiro se backend já está rodando
   checkBackendReady((alreadyRunning) => {
-    if (alreadyRunning) {
-      console.log('[Electron] Backend já está rodando na porta 3001.');
-      return;
-    }
+    if (alreadyRunning) return;
 
-    console.log('[Electron] Iniciando backend...');
     const backendDir = path.join(__dirname, '..', 'backend');
     backendProcess = spawn('npm.cmd', ['run', 'dev'], {
       cwd: backendDir,
       shell: true,
       stdio: 'ignore',
+      windowsHide: true, // Garante que NENHUMA janela CMD apareça
     });
   }, 1);
 }
@@ -68,14 +68,11 @@ function createMainWindow() {
     webPreferences: {
       nodeIntegration: false,
       contextIsolation: true,
-      // ⚠️ CHAVE PRINCIPAL: Nunca suspende o microfone em segundo plano
-      backgroundThrottling: false,
+      backgroundThrottling: false, // Permite escuta em segundo plano
     },
   });
 
-  // Aguarda backend e carrega a interface construída
   checkBackendReady(() => {
-    // Carrega o frontend construído ou localhost
     const distIndex = path.join(__dirname, '..', 'frontend', 'dist', 'index.html');
     mainWindow.loadFile(distIndex).catch(() => {
       mainWindow.loadURL('http://localhost:5173');
@@ -86,7 +83,7 @@ function createMainWindow() {
     });
   });
 
-  // Ao clicar no "X", minimiza para a bandeja em vez de fechar
+  // Fecha para a bandeja
   mainWindow.on('close', (event) => {
     if (!isQuitting) {
       event.preventDefault();
@@ -96,7 +93,6 @@ function createMainWindow() {
 }
 
 function createTray() {
-  // Converte SVG do ícone para imagem nativa
   let icon;
   try {
     icon = nativeImage.createFromBuffer(TRAY_ICON_SVG);
@@ -105,7 +101,7 @@ function createTray() {
   }
 
   tray = new Tray(icon);
-  tray.setToolTip('Aline - Smart Home Assistant (Ouvindo em segundo plano)');
+  tray.setToolTip('Aline - Smart Home Assistant (Ativa na bandeja)');
 
   const contextMenu = Menu.buildFromTemplate([
     {
@@ -138,7 +134,6 @@ function createTray() {
 
   tray.setContextMenu(contextMenu);
 
-  // Clique simples no ícone da bandeja alterna visibilidade
   tray.on('click', () => {
     if (!mainWindow) return;
     if (mainWindow.isVisible()) {
@@ -150,7 +145,7 @@ function createTray() {
   });
 }
 
-// Garante apenas 1 instância da Aline rodando
+// Instância única
 const gotTheLock = app.requestSingleInstanceLock();
 
 if (!gotTheLock) {
